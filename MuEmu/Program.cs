@@ -60,6 +60,7 @@ using MuEmu.Events.Raklion;
 using MuEmu.Events.AcheronGuardian;
 using Serilog.Events;
 using static System.Net.Mime.MediaTypeNames;
+using System.Collections;
 
 namespace MuEmu
 {
@@ -140,7 +141,7 @@ namespace MuEmu
             Name = xml.Name;
             Console.Title = ServerMessages.GetMessage(Messages.Server_Title, xml.Code, xml.Name, xml.Client.Version, xml.Client.Serial, xml.Database.DataBase, xml.Season);
 
-            ConnectionString = $"Server={xml.Database.DBIp};port=3306;Database={xml.Database.DataBase};user={xml.Database.BDUser};password={xml.Database.DBPassword};Convert Zero Datetime=True;";
+            ConnectionString = $"Server={xml.Database.DBIp};port=3306;Database={xml.Database.DataBase};user={xml.Database.BDUser};password={xml.Database.DBPassword};Convert Zero Datetime=True;charset=utf8mb4;";
 
             GameContext.ConnectionString = ConnectionString;
             SimpleModulus.LoadDecryptionKey(xml.Files.DataRoot + "Dec1.dat");
@@ -357,15 +358,32 @@ namespace MuEmu
                 Log.Information(ServerMessages.GetMessage(Messages.Server_Disconnecting_Accounts));
                 using (var db = new GameContext())
                 {
-                    var accs = from acc in db.Accounts
-                               where acc.IsConnected && acc.ServerCode == xml.Code
-                               select acc;
+                    try
+                    {
+                        var accs = (from acc in db.Accounts
+                                    where acc.IsConnected && acc.ServerCode == xml.Code
+                                    select acc).ToList();
 
-                    foreach (var acc in accs)
-                        acc.IsConnected = false;
+                        if (accs.Count > 0)
+                        {
+                            foreach (var acc in accs)
+                            {
+                                acc.IsConnected = false;
+                            }
+                            db.Accounts.UpdateRange(accs);
 
-                    db.Accounts.UpdateRange(accs);
-                    db.SaveChanges();
+                        }
+                    } catch(Exception e)
+                    {
+                        Log.Warning("Disconnect accounts error");
+                        Log.Error(e.Message);
+                    } 
+                    finally
+                    {
+                        db.SaveChanges();
+                    } 
+
+
                 }
 
                 ResourceCache.Initialize(xml.Files.DataRoot);
@@ -662,14 +680,14 @@ namespace MuEmu
                 .AddEvent(Events.Events.MoonRabbit, new MoonRabbit())
                 .AddEvent(Events.Events.WhiteWizard, new WhiteWizard())
                 .AddEvent(Events.Events.EventEgg, new EventEgg())
-                .AddEvent(Events.Events.MuRummy, new MuRummy(Program.XMLConfiguration.Files.MGMuRummy))
+                .AddEvent(Events.Events.MuRummy, new MuRummy(XMLConfiguration.Files.DataRoot + Program.XMLConfiguration.Files.MGMuRummy))
                 .AddEvent(Events.Events.CastleSiege, new CastleSiege())
                 .AddEvent(Events.Events.Raklion, new BattleOfSelupan())
                 .AddEvent(Events.Events.AcheronGuardian, new AcheronGuardian())
                 //.AddEvent(Events.Events.DoubleGoer, new DoubleGoer())
-                .AddEvent(Events.Events.MineSweeper, new MineSweeper(Program.XMLConfiguration.Files.MGFindBombs))
-                .AddEvent(Events.Events.JeweldryBingo, new JeweldryBingo(Program.XMLConfiguration.Files.MGJewelBingo))
-                .AddEvent(Events.Events.BallsAndCows, new BallsAndCows(Program.XMLConfiguration.Files.MGBallsAndCows))
+                .AddEvent(Events.Events.MineSweeper, new MineSweeper(XMLConfiguration.Files.DataRoot + Program.XMLConfiguration.Files.MGFindBombs))
+                .AddEvent(Events.Events.JeweldryBingo, new JeweldryBingo(XMLConfiguration.Files.DataRoot + Program.XMLConfiguration.Files.MGJewelBingo))
+                .AddEvent(Events.Events.BallsAndCows, new BallsAndCows(XMLConfiguration.Files.DataRoot + Program.XMLConfiguration.Files.MGBallsAndCows))
                 ;
             LuckyCoins.Initialize();
             EventChips.Initialize();

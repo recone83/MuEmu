@@ -73,7 +73,8 @@ namespace MuEmu.Monsters
 
         public void LoadMonster(string file)
         {
-            if(File.Exists(file+".xml"))
+
+            if (File.Exists(file + ".xml"))
             {
                 Logger.Information(ServerMessages.GetMessage(Messages.MonsterMng_Loading), file + ".xml");
                 var xml = ResourceLoader.XmlLoader<XmlMonsterInfo>(file + ".xml");
@@ -97,6 +98,7 @@ namespace MuEmu.Monsters
                 //xml.Monsters = _monsterInfo.Select(x => x.Value).ToArray();
                 ResourceLoader.XmlSaver(file + ".xml", xml);
             }
+            else throw new Exception("File does not exists" + file);
 
             var bags = ResourceCache.Instance.GetItemBags();
             foreach(var mob in _monsterInfo.Values)
