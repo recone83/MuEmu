@@ -170,7 +170,7 @@ auto WZParser2 = (T_WZParse)PARSE_PACKET_STREAM;
 auto WZSenderClass = (DWORD**)MU_SENDER_CLASS;
 char szIp[50];
 char szVersion[] = CLIENT_VERSION;
-char szSerial[18] = "fughy683dfu7teqg";
+char szSerial[18] = "k1Pk2jcET48mxL3b";
 int iPort = 44405;
 LPTOP_LEVEL_EXCEPTION_FILTER PreviousExceptionFilter = NULL;
 bool UEF = false;
@@ -544,7 +544,7 @@ void MainConfiguration()
 
     GetPrivateProfileStringA("MU", "URL", "127.0.0.1", szIp, sizeof(szIp), cfgFile);
     iPort = GetPrivateProfileIntA("MU", "Port", 44405, cfgFile);
-    GetPrivateProfileStringA("MU", "Serial", "fughy683dfu7teqg", szSerial, 18, cfgFile);
+    GetPrivateProfileStringA("MU", "Serial", "k1Pk2jcET48mxL3b", szSerial, 18, cfgFile);
     GetPrivateProfileStringA("MU", "Version", CLIENT_VERSION, szVersion, sizeof(szVersion), cfgFile);
     ODSShow = GetPrivateProfileIntA("MU", "OutputDebugString", 0, cfgFile) == 1;
     if (GetPrivateProfileIntA("MU", "Console", 0, cfgFile) == 1)
