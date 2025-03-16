@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using WebZen.Serialization;
 using WebZen.Util;
@@ -165,8 +166,18 @@ namespace MU.Network.Auth
             return this;
         }
     }
-
-    [WZContract]
+/*
+typedef struct
+{
+    PBMSG_HEADER Header;
+    BYTE         SubCode;
+    BYTE         MaxClass;
+    BYTE		 MoveCount;
+    BYTE         CharacterCount;
+    BYTE		 IsVaultExtended;
+} PHEADER_DEFAULT_CHARACTER_LIST, * LPPHEADER_DEFAULT_CHARACTER_LIST;
+*/
+    [WZContract(Dump = true)]
     public class SCharacterListS9 : CharList, IAuthMessage
     {
         [WZMember(0)]
@@ -181,7 +192,7 @@ namespace MU.Network.Auth
         [WZMember(3)]
         public byte WhExpansion { get; set; }
 
-        [WZMember(5, SerializerType = typeof(ArraySerializer))]
+        [WZMember(4, SerializerType = typeof(ArraySerializer))]
         public CharacterPreviewS9Dto[] CharacterList { get; set; }
 
         public SCharacterListS9()
@@ -200,7 +211,7 @@ namespace MU.Network.Auth
         public override CharList AddChar(byte id, CharacterDto @char, byte[] charSet, GuildStatus gStatus)
         {
             var l = CharacterList.ToList();
-            l.Add(new CharacterPreviewS9Dto(id, @char.Name, @char.Level, (ControlCode)@char.CtlCode, charSet.Take(18).ToArray(), gStatus, 3));
+            l.Add(new CharacterPreviewS9Dto(id, @char.Name, @char.Level, (ControlCode)@char.CtlCode, @char.Class, charSet.Take(25).ToArray(), gStatus, 3));
             CharacterList = l.ToArray();
             Count = (byte)CharacterList.Length;
             return this;
@@ -376,45 +387,58 @@ namespace MU.Network.Auth
             GuildStatus = gStatus;
         }
     }
-
-    [WZContract]
-    public class CharacterPreviewS9Dto
+/**
+typedef struct
+{
+    BYTE         Index; //1
+    char         ID[MAX_ID_SIZE]; //10
+    WORD         Level; //4
+    BYTE		 CtlCode; //1
+    SERVER_CLASS_TYPE    Class; //1
+    BYTE         Flags; //1
+    BYTE         Equipment[EQUIPMENT_LENGTH_EXTENDED]; //25
+    BYTE         byGuildStatus; //1
+} PRECEIVE_CHARACTER_LIST_EXTENDED, * LPPRECEIVE_CHARACTER_LIST_EXTENDED; //44
+*/
+   [WZContract(Dump = true)]
+    public class CharacterPreviewS9Dto //42
     {
         [WZMember(0)]
         public byte ID { get; set; }
 
-        [WZMember(1, 11)]
+        [WZMember(1, 10)]
         public byte[] btName { get; set; }
 
         [WZMember(2)]
         public ushort Level { get; set; }
 
         [WZMember(3)]
-        public ControlCode ControlCode { get; set; }
+        public byte ControlCode { get; set; }
 
-        [WZMember(4, 18)]
+        [WZMember(4)]
+        public byte HeroClass { get; set; }
+        
+        [WZMember(5)]
+        public byte Flags { get; set; }
+
+        [WZMember(6, 25)]
         public byte[] CharSet { get; set; }
 
-        [WZMember(5)]
-        public GuildStatus GuildStatus { get; set; }
-
-        [WZMember(6)]
-        public byte PKLevel { get; set; }
-
         [WZMember(7)]
-        public byte unk { get; set; }
+        public GuildStatus GuildStatus { get; set; }
 
         public CharacterPreviewS9Dto() { }
 
-        public CharacterPreviewS9Dto(byte Id, string name, ushort level, ControlCode cc, byte[] charSet, GuildStatus gStatus, byte pkLevel)
+        public CharacterPreviewS9Dto(byte Id, string name, ushort level, ControlCode cc, int heroClass, byte[] charSet, GuildStatus gStatus, byte pkLevel)
         {
             ID = Id;
             btName = name.GetBytes();
             Level = level;
-            ControlCode = cc;
+            ControlCode = 0;
+            HeroClass = (byte)(heroClass >> 2);
+            Flags = 0;
             CharSet = charSet;
             GuildStatus = gStatus;
-            PKLevel = pkLevel;
         }
     }
 
@@ -468,7 +492,7 @@ namespace MU.Network.Auth
         [WZMember(7)] public byte unk37 { get; set; } //37
 }
 
-    [WZContract(Serialized = true)]
+    [WZContract(Serialized = false)]
     public class SCharacterMapJoin : IAuthMessage
     {
         [WZMember(0, typeof(BinaryStringSerializer), 10)]
@@ -477,40 +501,92 @@ namespace MU.Network.Auth
         [WZMember(1)]
         public byte Valid { get; set; }
     }
-
-    [WZContract(Serialized = true)] // 0xC3
+    //tutaj
+    /*
+    
+    typedef struct
+{
+    PBMSG_HEADER Header;
+    BYTE         SubCode;
+    BYTE         PositionX;
+    BYTE         PositionY;
+    BYTE         Map;
+    BYTE         Angle;
+    uint64_t	CurrentExperience;
+    uint64_t	ExperienceForNextLevel;
+    WORD         LevelUpPoint;
+    WORD         Strength;
+    WORD         Dexterity;
+    WORD         Vitality;
+    WORD         Energy;
+    WORD         Charisma;
+    DWORD         Life;
+    DWORD         LifeMax;
+    DWORD         Mana;
+    DWORD         ManaMax;
+    DWORD		 Shield;
+    DWORD		 ShieldMax;
+    DWORD		 SkillMana;
+    DWORD		 SkillManaMax;
+    DWORD        Gold;
+    BYTE         PK;
+    BYTE		 CtlCode;
+    short        AddPoint;
+    short        MaxAddPoint;
+    WORD		 wMinusPoint;
+    WORD		 wMaxMinusPoint;
+    WORD         AttackSpeed;
+    WORD         MagicSpeed;
+    WORD         MaxAttackSpeed;
+    BYTE		 InventoryExtensions;
+} PRECEIVE_JOIN_MAP_SERVER_EXTENDED, * LPPRECEIVE_JOIN_MAP_SERVER_EXTENDED;
+    */
+    [WZContract(Serialized = false, Dump = true)] // 0xC3
     public class SCharacterMapJoin2 : IAuthMessage
     {
         [WZMember(0)] public byte MapX { get; set; }//0
         [WZMember(1)] public byte MapY { get; set; }//1
         [WZMember(2)] public byte Map { get; set; }//2
         [WZMember(3)] public byte Direccion { get; set; }//3
-        [WZMember(4)] public long Experience { get; set; }//4
-        [WZMember(5)] public long NextExperience { get; set; }//c
+
+        [WZMember(4)] public ulong  Experience { get; set; }//4
+        [WZMember(5)] public ulong  NextExperience { get; set; }//c
+
         [WZMember(6)] public ushort LevelUpPoints { get; set; }//14
         [WZMember(7)] public ushort Str { get; set; }//16
         [WZMember(8)] public ushort Agi { get; set; }//18
         [WZMember(9)] public ushort Vit { get; set; }//1a
         [WZMember(10)] public ushort Ene { get; set; }//1c
-        [WZMember(11)] public ushort Life { get; set; }//1e
-        [WZMember(12)] public ushort MaxLife { get; set; }//20
-        [WZMember(13)] public ushort Mana { get; set; }//22
-        [WZMember(14)] public ushort MaxMana { get; set; }//24
-        [WZMember(15)] public ushort Shield { get; set; }//26
-        [WZMember(16)] public ushort MaxShield { get; set; }//28
-        [WZMember(17)] public ushort Stamina { get; set; }//2a
-        [WZMember(18)] public ushort MaxStamina { get; set; }//2c
-        [WZMember(19)] public ushort unk { get; set; }
+        [WZMember(11)] public ushort Charisma { get; set; }//1e
+
+        [WZMember(12)] public uint Life { get; set; }//1e
+        [WZMember(13)] public uint MaxLife { get; set; }//20
+        [WZMember(14)] public uint Mana { get; set; }//22
+        [WZMember(15)] public uint MaxMana { get; set; }//24
+        [WZMember(16)] public uint Shield { get; set; }//26
+        [WZMember(17)] public uint MaxShield { get; set; }//28
+        [WZMember(18)] public uint Stamina { get; set; }//2a
+        [WZMember(19)] public uint MaxStamina { get; set; }//2c
+
+       // [WZMember(19)] public ushort unk { get; set; }
         [WZMember(20)] public uint Zen { get; set; }//2e
+
         [WZMember(21)] public byte PKLevel { get; set; }//36
         [WZMember(22)] public byte ControlCode { get; set; }//37
-        [WZMember(23)] public short AddPoints { get; set; }//38
-        [WZMember(24)] public short MaxAddPoints { get; set; }//3a 
-        [WZMember(25)] public ushort Cmd { get; set; }//3c
-        [WZMember(26)] public short MinusPoints { get; set; }//3e
-        [WZMember(27)] public short MaxMinusPoints { get; set; }//40
-        [WZMember(28)] public byte ExpandedInv { get; set; }//41
-        [WZMember(29)] public uint Ruud { get; set; }//42
+
+        [WZMember(23)] public ushort AddPoints { get; set; }//38
+        [WZMember(24)] public ushort MaxAddPoints { get; set; }//3a 
+
+       // [WZMember(25)] public ushort Cmd { get; set; }//3c
+        [WZMember(25)] public short  MinusPoints { get; set; }//3e
+        [WZMember(26)] public short  MaxMinusPoints { get; set; }//40
+
+        [WZMember(27)] public ushort  AttackSpeed { get; set; }
+        [WZMember(28)] public ushort  MagicSpeed { get; set; }
+        [WZMember(29)] public ushort  MaxAttackSpeed { get; set; }
+
+        [WZMember(30)] public byte  ExpandedInv { get; set; }//41
+        //[WZMember(29)] public uint Ruud { get; set; }//42
         //[WZMember(30)]
         //public byte ExpandedVault { get; set; }//44
 
@@ -527,10 +603,11 @@ namespace MU.Network.Auth
             Agi = agility;
             Vit = vitality;
             Ene = energy;
-            Cmd = comm;
+            Charisma = 100;
+           // Cmd = comm;
             Direccion = direction;
-            Experience = experience.ShufleEnding();
-            NextExperience = nextExperience.ShufleEnding();
+            Experience = (ulong)experience;
+            NextExperience = (ulong)nextExperience;
             Life = hp;
             MaxLife = hpMax;
             Mana = mp;
@@ -541,15 +618,21 @@ namespace MU.Network.Auth
             MaxStamina = bpMax;
             Zen = Money;
             PKLevel = pk;
-            AddPoints = addPoints;
-            MaxAddPoints = maxAddPoints;
-            MinusPoints = minusPoints;
-            MaxMinusPoints = maxMinusPoints;
+            AddPoints = (ushort)addPoints;
+            MaxAddPoints = (ushort)maxAddPoints;
+            MinusPoints = (short)minusPoints;
+            MaxMinusPoints = (short)maxMinusPoints;
+            //ExpandedInv = expandedInventory;
             ExpandedInv = expandedInventory;
-            Ruud = ruud;
+            //Ruud = ruud;
             ControlCode = ctlCode;
+            //MapX = x;
             MapX = x;
             MapY = y;
+
+            MagicSpeed = 100;
+            AttackSpeed = 100;
+            MaxAttackSpeed = 100;
         }
 
         //45
@@ -564,7 +647,7 @@ namespace MU.Network.Auth
         }
     }
 
-    [WZContract(Serialized = true)] // 0xC3
+    [WZContract(Serialized = false)] // 0xC3
     public class SCharacterMapJoin2S12Eng : IAuthMessage
     {
         [WZMember(0)] public byte MapX { get; set; }//0
@@ -650,7 +733,7 @@ namespace MU.Network.Auth
         }
     }
 
-    [WZContract(Serialized = true)] // 0xC3
+    [WZContract(Serialized = false)] // 0xC3
     public class SCharacterMapJoin2S16Kor : IAuthMessage
     {
         [WZMember(0)] public byte MapX { get; set; }//4

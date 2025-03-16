@@ -10,6 +10,10 @@ using Serilog;
 using Serilog.Core;
 using WebZen.Util;
 using System.Net.Http.Headers;
+using BlubLib;
+using System.Reflection;
+using Newtonsoft.Json;
+using static WebZen.Network.WZPacketEncoder;
 
 namespace WebZen.Network
 {
@@ -65,64 +69,30 @@ namespace WebZen.Network
                     case 0xC3:
                         tmp = new byte[size - 2];
                         rawPacket.Read(tmp, 0, tmp.Length);
-
-                        if(_packetRijndael)
-                        {
-                            dec = PacketEncrypt.Decrypt(tmp, client);
-                            if (dec.Length == 0)
-                                return size;
-
-                            decPacket.WriteByte(0xC1);
-                            decPacket.WriteByte((byte)(dec.Length + 2));
-                            decPacket.Write(dec, 0, dec.Length);
-                        }else
-                        {
-                            dec = SimpleModulus.Decoder(tmp);
-                            serial = dec[0];
-                            decPacket.WriteByte(0xC1);
-                            decPacket.WriteByte((byte)(dec.Length + 1));
-                            decPacket.Write(dec, 1, dec.Length - 1);
-                        }
+                        dec = SimpleModulus.Decoder(tmp);
+                        serial = dec[0];
+                        decPacket.WriteByte(0xC1);
+                        decPacket.WriteByte((byte)(dec.Length + 1));
+                        decPacket.Write(dec, 1, dec.Length - 1);
                         break;
                     case 0xC4:
                         tmp = new byte[size - 3];
                         rawPacket.Read(tmp, 0, tmp.Length);
-
-                        if (_packetRijndael)
-                        {
-                            dec = PacketEncrypt.Decrypt(tmp, client);
-                            if (dec.Length == 0)
-                                return size;
-
-                            decPacket.WriteByte(0xC2);
-                            decPacket.WriteByte((byte)((dec.Length + 3) >> 8));
-                            decPacket.WriteByte((byte)((dec.Length + 3) & 255));
-                            decPacket.Write(dec, 0, dec.Length);
-                        }
-                        else
-                        {
-                            dec = SimpleModulus.Decoder(tmp);
-                            serial = dec[0];
-                            decPacket.WriteByte(0xC2);
-                            decPacket.WriteByte((byte)((dec.Length + 2) >> 8));
-                            decPacket.WriteByte((byte)((dec.Length + 2) & 255));
-                            decPacket.Write(dec, 1, dec.Length - 1);
-                        }
+                        dec = SimpleModulus.Decoder(tmp);
+                        serial = dec[0];
+                        decPacket.WriteByte(0xC2);
+                        decPacket.WriteByte((byte)((dec.Length + 2) >> 8));
+                        decPacket.WriteByte((byte)((dec.Length + 2) & 255));
+                        decPacket.Write(dec, 1, dec.Length - 1);
                         break;
                 }
-                
                 using (var spe = new StreamPacketEngine(_packetRijndael))
                 {
                     spe.AddData(decPacket.ToArray());
                     var posProcess = spe.ExtractPacket();
                     posPacket.Write(posProcess, 0, posProcess.Length);
                 }
-
                 posPacket.Seek(0, SeekOrigin.Begin);
-
-#if DEBUG
-                Logger.Debug("Incoming Packet: "+string.Join(", 0x", posPacket.GetBuffer().Take((int)posPacket.Length).Select(x => x.ToString("X2"))));
-#endif
 
                 ushort opCode;
                 ushort pkSize;
@@ -163,24 +133,31 @@ namespace WebZen.Network
                 }
 
                 if ((opCode& 0xFF00)== 0xFF00) posPacket.Position--;
-                //posPacket.Seek(0, SeekOrigin.Begin);
-
                 var factory = _factories.FirstOrDefault(f => f.ContainsOpCode(opCode));
                 try
                 {
                     if (factory != null)
                     {
-                        messages.Add(factory.GetMessage(opCode, posPacket));
+                       var msg = factory.GetMessage(opCode, posPacket);
+#if DEBUG
+    Logger.Debug("Inc. Msg1: " + msg.GetType() + ", pkg.: "+string.Join(", 0x", posPacket.GetBuffer().Take((int)posPacket.Length).Select(x => x.ToString("X2"))));
+#endif
+                        messages.Add(msg);
                     }
                     else
                     {
                         var orgOpCode = opCode;
                         opCode |= 0xFF00;
                         factory = _factories.FirstOrDefault(f => f.ContainsOpCode(opCode));
+
                         if (factory != null)
                         {
                             posPacket.Position--;
-                            messages.Add(factory.GetMessage(opCode, posPacket));
+                            var msg = factory.GetMessage(opCode, posPacket);
+#if DEBUG
+    Logger.Debug("Inc. Msg2: " + msg.GetType() + ", pkg.: "+string.Join(", 0x", posPacket.GetBuffer().Take((int)posPacket.Length).Select(x => x.ToString("X2"))));
+#endif
+                            messages.Add(msg);
                         }
                         else
                         {
@@ -398,25 +375,17 @@ namespace WebZen.Network
                 if (att.ExtraEncode != null)
                 {
                     var encoder = (IExtraEncoder)Activator.CreateInstance(att.ExtraEncode);
-                    encoder.Encoder(data); 
+                    //encoder.Encoder(data); 
                 }
 
                 if (att.Serialized)
                 {
-                    data.Position = (att.LongMessage ? 3 : 2);
-                    if (_packetRijndael == true)
-                    {
-                        PacketEncrypt.Encrypt(data, data, client);
-                        //PacketPrint(data);
-                    }
-                    else
-                        SimpleModulus.Encrypt(data, (byte)serial, data);
-
-                    serial++;
-                    data.Position = 0;
-                    data.WriteByte((byte)(att.LongMessage ? 0xC4 : 0xC3));
+                   //data.Position = (att.LongMessage ? 3 : 2);
+                   //SimpleModulus.Encrypt(data, (byte)serial, data);
+                   //serial++;
+                   //data.Position = 0;
+                   //data.WriteByte((byte)(att.LongMessage ? 0xC4 : 0xC3));
                 }
-
                 data.Position = 1;
                 if (att.LongMessage)
                 {
@@ -432,7 +401,11 @@ namespace WebZen.Network
                 {
                     Logger.Debug($"Message({message.GetType().Name}):{string.Join(" ", res.Select(x => x.ToString("X")))}");
                 }
-                    return res;
+                #if DEBUG
+                    Logger.Debug("To JSon:"+JsonConvert.SerializeObject(message));
+                    Logger.Debug("Send Msg: " + message.GetType()+", snd Packet: "+string.Join(", 0x", data.GetBuffer().Take((int)data.Length).Select(x => x.ToString("X2")))+", Size: "+data.Length);
+                #endif
+                return res;
             }
         }
     }
@@ -440,6 +413,7 @@ namespace WebZen.Network
     public class WZPacketEncoderClient
     {
         private readonly MessageFactory[] _factories;
+        public static readonly ILogger Logger = Log.ForContext(Constants.SourceContextPropertyName, nameof(WZPacketEncoder));
 
         public WZPacketEncoderClient(MessageFactory[] factories)
         {
@@ -537,7 +511,9 @@ namespace WebZen.Network
                     result = spe.ExtractData();
                 }
             }
-
+#if DEBUG
+            Logger.Debug("Send Packet: " + string.Join(", 0x", result.Take((int)result.Length).Select(x => x.ToString("X2")))+", Size: "+result.Length);
+#endif
             return result;
         }
     }

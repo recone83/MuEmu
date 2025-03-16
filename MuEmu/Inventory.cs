@@ -1061,255 +1061,85 @@ namespace MuEmu
         /// <returns></returns>
         public static byte[] GetCharset(HeroClass @class, Inventory inv, byte ActionNumber)
         {
-            var CharSet = new byte[20];
+            var CharSet = new byte[25];
             var equip = inv._equipament;
 
-            CharSet[0] = Character.GetClientClass(@class);
-            switch(ActionNumber)
-            {
-                case 128:
-                    CharSet[0] |= (byte)2u;
-                    break;
-                case 129:
-                    CharSet[0] |= (byte)3u;
-                    break;
-            }
-            var SmallLevel = 0u;
-
+            var offset = 0;
             if (equip.TryGetValue(Equipament.RightHand, out Item it))
             {
                 //CS_WEAPON1_TYPE
-                CharSet[1] = (byte)it.Number;
-                //CS_WEAPON1_DATA
-                CharSet[12] |= (byte)((it.Number & 0xF00) >> 4);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x04 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x04 : 0x00);
-                SmallLevel |= it.SmallPlus;
+                CharSet[offset] = (byte)it.Number;
             } else
             {
-                CharSet[1] = 0xff;
-                CharSet[12] |= 0xF0;
+                CharSet[offset] = 0xff;
             }
-
+            offset+=3;
             if (equip.TryGetValue(Equipament.LeftHand, out it))
             {
                 //CS_WEAPON2_TYPE
-                CharSet[2] = (byte)it.Number;
-                //CS_WEAPON2_DATA
-                CharSet[13] |= (byte)((it.Number & 0xF00) >> 4);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x02 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x02 : 0x00);
-                SmallLevel |= (uint)(it.SmallPlus << 3);
+                CharSet[offset] = (byte)it.Number;
             } else
             {
-                CharSet[2] = 0xff;
-                CharSet[13] |= 0xF0;
+                CharSet[offset] = 0xff;
             }
-
+            offset+=3;
             if(equip.TryGetValue(Equipament.Helm, out it))
             {
                 //CS_SET_HELMET1
-                CharSet[13] |= (byte)((it.Number.Number&0x1E0) >> 5); //1FF
-                //CS_SET_HELMET2
-                CharSet[9] |= (byte)((it.Number.Number & 0x10) << 3);
-                //CS_SET_HELMET3
-                CharSet[3] |= (byte)((it.Number.Number & 0x0F) << 4);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x80 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x80 : 0x00);
-                SmallLevel |= (uint)(it.SmallPlus << 6);
+                CharSet[offset] = (byte)it.Number;
             }
             else
             {
-                CharSet[13] |= 0x0F;
-                CharSet[9] |= 0x80;
-                CharSet[3] |= 0xF0;
+                CharSet[offset] |= 0x0F;
             }
-
+            offset+=3;
             if (equip.TryGetValue(Equipament.Armor, out it))
             {
-                CharSet[14] |= (byte)((it.Number.Number & 0x1E0) >> 1); //1FF
-                CharSet[9] |= (byte)((it.Number.Number & 0x10) << 2);
-                CharSet[3] |= (byte)((it.Number.Number & 0x0F)/* << 4*/);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x40 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x40 : 0x00);
-                SmallLevel |= (uint)(it.SmallPlus << 9);
+                CharSet[offset] = (byte)it.Number;
             }
             else
             {
-                CharSet[14] |= 0xF0;
-                CharSet[9] |= 0x40;
-                CharSet[3] |= 0x0F;
+                CharSet[offset] |= 0x0F;
             }
-
+            offset+=3;
             if (equip.TryGetValue(Equipament.Pants, out it))
             {
-                CharSet[14] |= (byte)((it.Number.Number & 0x1E0) >> 5); //1FF
-                CharSet[9] |= (byte)((it.Number.Number & 0x10) << 1);
-                CharSet[4] |= (byte)((it.Number.Number & 0x0F) << 4);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x20 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x20 : 0x00);
-                SmallLevel |= (uint)(it.SmallPlus << 12);
+                CharSet[offset] = (byte)it.Number;
             }
             else
             {
-                CharSet[14] |= 0x0F;
-                CharSet[9] |= 0x20;
-                CharSet[4] |= 0xF0;
+                 CharSet[offset] |= 0x0F;
             }
-
+            offset+=3;
             if (equip.TryGetValue(Equipament.Gloves, out it))
             {
-                CharSet[15] |= (byte)((it.Number.Number & 0x1E0) >> 1); //1FF
-                CharSet[9] |= (byte)((it.Number.Number & 0x10)/* << 1*/);
-                CharSet[4] |= (byte)((it.Number.Number & 0x0F)/* << 4*/);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x10 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x10 : 0x00);
-                SmallLevel |= (uint)(it.SmallPlus << 15);
+                CharSet[offset] = (byte)it.Number;
             }
             else
             {
-                CharSet[15] |= 0xF0;
-                CharSet[9] |= 0x10;
-                CharSet[4] |= 0x0F;
+                 CharSet[offset] |= 0x0F;
             }
-
+            offset+=3;
             if (equip.TryGetValue(Equipament.Boots, out it))
             {
-                CharSet[15] |= (byte)((it.Number.Number & 0x1E0) >> 5); //1FF
-                CharSet[9] |= (byte)((it.Number.Number & 0x10) << 1);
-                CharSet[5] |= (byte)((it.Number.Number & 0x0F) << 4);
-                CharSet[10] |= (byte)(it.OptionExe != 0 ? 0x08 : 0x00);
-                CharSet[11] |= (byte)(it.SetOption != 0 ? 0x08 : 0x00);
-                SmallLevel |= (uint)(it.SmallPlus << 18);
+                CharSet[offset] = (byte)it.Number;
             }
             else
             {
-                CharSet[15] |= 0x0F;
-                CharSet[9] |= 0x08;
-                CharSet[5] |= 0xF0;
+                 CharSet[offset] |= 0x0F;
             }
-
+            offset+=3;
             if (equip.TryGetValue(Equipament.Pet, out it))
             {
-                if(
-                    it.Number.Number == 6723 || //Rudolph
-                    it.Number.Number == 6779 //??
-                    )
-                {
-                    CharSet[5] |= 2;
-                }
-
-                if ((it.Number.Number & 0x03) != 0)
-                {
-                    CharSet[10] |= 0x01;
-                    CharSet[5] |= (byte)(it.Number.Number & 0x03);
-                }
-
-                if(it.Number.Number == ItemNumber.FromTypeIndex(13,4))
-                {
-                    CharSet[12] |= 0x01;
-                }
-            }
-
-            if(
-                (equip.ContainsKey(Equipament.LeftRing) && (equip[Equipament.LeftRing].Number.Number == ItemNumber.FromTypeIndex(13,169) || equip[Equipament.LeftRing].Number.Number == ItemNumber.FromTypeIndex(13, 170))) ||
-               (equip.ContainsKey(Equipament.RightRing) && (equip[Equipament.RightRing].Number.Number == ItemNumber.FromTypeIndex(13, 169) || equip[Equipament.RightRing].Number.Number == ItemNumber.FromTypeIndex(13, 170))))
-            {
-                CharSet[12] |= 0x08;
             }
 
             if(equip.TryGetValue(Equipament.Wings, out it))
             {
-                Dictionary<int, byte[]> sub;
-                // Pre season X
-                sub = new Dictionary<int, byte[]>
-                {
-                                  //[5], [9], [16]
-                    { 00, new byte[]{ 04, 0x01, 00 } }, //Wings of Fairy
-                    { 01, new byte[]{ 04, 0x02, 00 } }, //Wings of Angel
-                    { 02, new byte[]{ 04, 0x03, 00 } }, //Wings of Satan
-                    { 03, new byte[]{ 08, 0x01, 00 } }, //Wings of Spirit
-                    { 04, new byte[]{ 08, 0x02, 00 } }, //Wings of Soul
-                    { 05, new byte[]{ 08, 0x03, 00 } }, //Wings of Dragon
-                    { 06, new byte[]{ 08, 0x04, 00 } }, //Wings of Darkness
-                    { 30, new byte[]{ 08, 0x05, 00 } },//Cape of lord
-                    { 36, new byte[]{ 12, 0x01, 00 } },//Wing of Storm
-                    { 37, new byte[]{ 12, 0x02, 00 } },//Wing of Space Time
-                    { 38, new byte[]{ 12, 0x03, 00 } },//Wing of Illusion
-                    { 39, new byte[]{ 12, 0x04, 00 } },//Wings of Hurricane
-                    { 40, new byte[]{ 12, 0x05, 00 } },//Mantle of Monarch
-                    { 41, new byte[]{ 04, 0x04, 00 } },//Wing of Mistery
-                    { 42, new byte[]{ 12, 0x07, 00 } },//Wing of Despair
-                    { 43, new byte[]{ 12, 0x06, 00 } },//Wings of Violent Wind
-                    { 49, new byte[]{ 08, 0x07, 00 } },
-                    { 50, new byte[]{ 12, 0x07, 00 } },
-                    { 51, new byte[]{ 12, 0x00, 08 } },
-                    { 52, new byte[]{ 12, 0x00, 09 } },
-                    { 53, new byte[]{ 12, 0x00, 10 } },
-                    { 54, new byte[]{ 12, 0x00, 11 } },
-                    { 55, new byte[]{ 12, 0x00, 12 } },
-                    { 56, new byte[]{ 12, 0x00, 13 } },
-                    { 57, new byte[]{ 12, 0x00, 14 } },
-                    { 139, new byte[]{ 0x00, 0x02, 0x02 << 2 } },
-                    { 140, new byte[]{ 0x00, 0x02, 0x03 << 2 } },
-                    { 141, new byte[]{ 0x00, 0x02, 0x04 << 2 } },
-                    { 142, new byte[]{ 0x00, 0x02, 0x05 << 2 } },
-                    { 143, new byte[]{ 0x00, 0x02, 0x06 << 2 } },
-                    { 144, new byte[]{ 0x00, 0x02, 0x07 << 2 } },
-                    { 145, new byte[]{ 0x00, 0x02, 0x08 << 2 } },
-                    { 262, new byte[]{ 0x00, 0x03, 0x00 << 2 } },
-                    { 263, new byte[]{ 0x00, 0x03, 0x01 << 2 } },
-                    { 264, new byte[]{ 0x00, 0x03, 0x02 << 2 } },
-                    { 265, new byte[]{ 0x00, 0x03, 0x03 << 2 } },
-                    { 266, new byte[]{ 0x00, 0x03, 0x10 << 2 } },
-                    { 267, new byte[]{ 0x00, 0x03, 0x14 << 2 } },
-                    { 268, new byte[]{ 0x00, 0x03, 0x10 << 2 } },
-                    { 269, new byte[]{ 0x00, 0x03, 0x1C << 2 } },
-                    //{ 30, new byte[]{ 0x00, 0x03, 0x18 << 2 } },
-                    { 270, new byte[]{ 0x00, 0x04, 0x00 << 2 } },
-                    { 278, new byte[]{ 0x00, 0x04, 0x04 << 2 } },
-                };
-
-                var info = sub[it.Number.Index];
-                CharSet[5] |= info[0];
-                CharSet[9] |= info[1];
-                CharSet[16] |= info[2];
             }
 
             if(equip.TryGetValue(Equipament.Pet, out it))
             {
-                switch(it.Number.Number)
-                {
-                    case 6720:
-                        CharSet[16] |= 0x20;
-                        break;
-                    case 6721:
-                        CharSet[16] |= 0x40;
-                        break;
-                    case 6723:
-                        CharSet[10] |= 0x01;
-                        CharSet[16] |= 0x80;
-                        break;
-                    case 6736:
-                        CharSet[16] |= 0xE0;
-                        break;
-                    case 6762:
-                        CharSet[16] |= 0xA0;
-                        break;
-                    case 6779:
-                        CharSet[16] |= 0x60;
-                        break;
-                }
             }
-
-            if(inv.Character != null && inv.Character.HaveMount)
-            {
-                CharSet[12] |= 0x01;
-            }
-
-            CharSet[6] = (byte)((SmallLevel >> 16) & 0xff);
-            CharSet[7] = (byte)((SmallLevel >>  8) & 0xff);
-            CharSet[8] = (byte)(SmallLevel & 0xff);
 
             return CharSet;
         }

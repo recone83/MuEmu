@@ -97,7 +97,7 @@ namespace MU.Network.Auth
                 case ServerSeason.Season9Eng:
                     //Register<CIDAndPassS12>(CSOpCode.Login);
                     //Register<SResets>(CSOpCode.Resets);
-                    //Register<SResetCharList>(CSOpCode.ResetList);
+                    Register<SResetCharList>(CSOpCode.ResetList);
                     break;
                 default:
                     ChangeType<CIDAndPass>(CSOpCode.Login, typeof(CIDAndPassS12));

@@ -229,6 +229,7 @@ namespace MU.Network.Game
             Register<SVPortMonCreateS16Kor>(GameOpCode.ViewPortMCreate);
             Register<SViewPortDestroy>(GameOpCode.ViewPortDestroy);
             Register<SViewPortItemDestroy>(GameOpCode.ViewPortItemDestroy);
+            
             VersionSelector.Register<SViewPortCreate>(ServerSeason.Season6Kor, GameOpCode.ViewPortCreate);
             VersionSelector.Register<SViewPortCreateS9>(ServerSeason.Season9Eng, GameOpCode.ViewPortCreate);
             VersionSelector.Register<SViewPortCreateS12>(ServerSeason.Season12Eng, GameOpCode.ViewPortCreate);

@@ -54,7 +54,7 @@ The configuration comes in XML, in the server.xml file, generated automatically 
       </Database>
       <Client>
         <Version>10525</Version>
-        <Serial>fughy683dfu7teqg</Serial>
+        <Serial>k1Pk2jcET48mxL3b</Serial>
         <CashShopVersion>512.2014.124</CashShopVersion>
       </Client>
       <GamePlay>

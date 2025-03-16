@@ -27,7 +27,7 @@ namespace MuEmu.Network
 
             if (predicates != null && predicates.Any(predicate => !predicate(session)))
             {
-                Logger.Debug("Dropping message {messageName} from client {remoteAddress}", message.GetType().Name, session.ID);
+                Logger.Debug("Dropping inc. msg{messageName} from client {remoteAddress}", message.GetType().Name, session.ID);
                 return false;
             }
 

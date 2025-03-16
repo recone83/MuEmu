@@ -93,10 +93,10 @@ namespace MuEmu
         {
             ServerSeason.Season6Kor => false,
             ServerSeason.Season9Eng => true,
-            ServerSeason.Season12Eng => true,
-            ServerSeason.Season16Kor => true,
-            ServerSeason.Season17Kor => true,
-            ServerSeason.Season17Kor75 => true,
+            ServerSeason.Season12Eng => false,
+            ServerSeason.Season16Kor => false,
+            ServerSeason.Season17Kor => false,
+            ServerSeason.Season17Kor75 => false,
             _ => throw new NotImplementedException()
         };
 

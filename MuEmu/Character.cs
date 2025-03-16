@@ -973,13 +973,12 @@ namespace MuEmu
 
             CashShop = new CashShop(plr.Session, characterDto);
             plr.Session.SendAsync(StatsInfo).Wait();
-
+            
             Inventory.SendInventory();
             Inventory.SendMuunInventory();
             Inventory.SendEventInventory();
 
             Quests.SendList();
-
             if (Class >= HeroClass.MuseElf && BaseClass == HeroClass.FaryElf)
                 Spells.TryAdd(Spell.InfinityArrow).Wait();
 
